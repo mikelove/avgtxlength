@@ -1,0 +1,4 @@
+GRCh38.fa = Homo_sapiens.GRCh38.dna_rm.primary_assembly.fa
+
+awk '$3 == "exon"' Homo_sapiens.GRCh38.77.gtf | grep -v "^CHR" | grep -v "^KI" | grep -v "^GL" > Homo_sapiens.GRCh38.77_filtered.gtf
+
