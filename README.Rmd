@@ -1,0 +1,14 @@
+# Effective length
+
+```{r}
+samples <- list.files("rsem_out")
+x <- read.delim(paste0("rsem_out/",samples[1],"/",samples[1],".genes.results"))
+library(data.table)
+y <- fread(paste0("cufflinks_out/",samples[1],"/isoforms.fpkm_tracking"))
+y <- as.data.frame(y)
+library(dplyr)
+cuff_summary <- y %>% group_by(gene_id) %>% summarize(cuff_eff_length=sum(length*FPKM)/sum(FPKM))
+rsem_summary <- data.frame(gene_id=x$gene_id, rsem_eff_length=x$effective_length)
+m <- merge(cuff_summary, rsem_summary)
+plot(m[,2:3],log="xy",cex=.3);abline(0,1,col="blue")
+```
