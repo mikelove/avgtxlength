@@ -23,7 +23,9 @@ transcript. For example, if a gene has two transcripts, one of length
 which accounts for 3/4 of the abundance, the effective length, or
 average transcript length, would be:
 
-$0.25 \cdot 1000 + 0.75 \cdot 2000 = 1750$
+```{r}
+0.25 * 1000 + 0.75 * 2000
+```
 
 ## Experiment files
 
