@@ -32,11 +32,14 @@ average transcript length, would be:
 The files are RNA-seq runs from the UCSD Human Reference Epigenome
 Mapping Project. Note that these are individuals runs from experiments
 which might have had multiple runs per experiment.
-The files are in the order: left ventricle, sigmoid colon, left ventricle, sigmoid colon.
+The experiments are two samples of each: left ventricle and sigmoid colon.
 
 ```{r}
-(samples <- list.files("rsem_out"))
-(condition <- c("LV","SC","LV","SC"))
+samples <- list.files("rsem_out")
+condition <- scan("condition.txt",what="char")
+ord <- order(condition)
+(samples <- samples[ord])
+(condition <- condition[ord])
 ```
 
 ## RSEM output
@@ -44,7 +47,7 @@ The files are in the order: left ventricle, sigmoid colon, left ventricle, sigmo
 The RSEM `.genes.results` files contain a column `effective_length`,
 so all we have to do is aggregate this over samples.
 
-```{r cache=TRUE}
+```{r}
 library(data.table)
 rsem_list <- list()
 for (i in seq_along(samples)) {
@@ -58,7 +61,7 @@ head(rsem_list[[1]])
 We combine these columns into one data frame, checking that the
 `gene_id` is consistent.
 
-```{r cache=TRUE}
+```{r}
 for (i in seq_along(samples)[-1]) {
   stopifnot(all(rownames(rsem_list[[i]]) == rownames(rsem_list[[1]])))
 }
@@ -75,7 +78,7 @@ In order to obtain the effective length, we use the
 the isoforms, weighting by the ratio of each isoform's FPKM over the total
 FPKM for all isoforms.
 
-```{r cache=TRUE}
+```{r}
 library(dplyr)
 cuff_list <- list()
 for (i in seq_along(samples)) {
@@ -90,7 +93,7 @@ head(cuff_list[[1]])
 We combine these columns into one data frame, checking that the
 `gene_id` is consistent.
 
-```{r cache=TRUE}
+```{r}
 for (i in seq_along(samples)[-1]) {
   stopifnot(all(rownames(cuff_list[[i]]) == rownames(cuff_list[[1]])))
 }
@@ -156,7 +159,7 @@ y$offset <- t(t(log(norm.mat)) + o)
 
 ## Exploring RSEM and Cufflinks estimates
 
-```{r cache=TRUE}
+```{r}
 idx <- intersect(rownames(rsem), rownames(cuff))
 length(idx)
 rsem <- rsem[idx,]
@@ -187,7 +190,7 @@ suppressWarnings(pairs(cuff,log="xy",cex=.1))
 ```{r rsem_ma}
 mypar()
 rsem_a <- rowMeans(rsem)
-rsem_m <- log2(rowMeans(rsem[,c(2,4)])/rowMeans(rsem[,c(1,3)]))
+rsem_m <- log2(rowMeans(rsem[,condition == "SC"])/rowMeans(rsem[,condition == "LV"]))
 plot(rsem_a, rsem_m, log="x", xlab="A", ylab="M", main="rsem", cex=.3)
 abline(h=0,col="blue")
 ```
@@ -195,7 +198,7 @@ abline(h=0,col="blue")
 ```{r cuff_ma}
 mypar()
 cuff_a <- rowMeans(cuff)
-cuff_m <- log2(rowMeans(cuff[,c(2,4)])/rowMeans(cuff[,c(1,3)]))
+cuff_m <- log2(rowMeans(cuff[,condition == "SC"])/rowMeans(cuff[,condition == "LV"]))
 plot(cuff_a, cuff_m, log="x", xlab="A", ylab="M", main="cufflinks", cex=.3)
 abline(h=0,col="blue")
 ```
