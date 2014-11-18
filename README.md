@@ -69,6 +69,14 @@ All we have to do is collect this column over the samples.
 
 ```r
 library(data.table)
+```
+
+```
+## data.table 1.9.4  For help type: ?data.table
+## *** NB: by=.EACHI is now explicit. See README to restore previous behaviour.
+```
+
+```r
 rsem_list <- list()
 for (i in seq_along(samples)) {
   cat(i)
@@ -131,6 +139,26 @@ FPKM for all isoforms.
 
 ```r
 library(dplyr)
+```
+
+```
+## 
+## Attaching package: 'dplyr'
+## 
+## The following objects are masked from 'package:data.table':
+## 
+##     between, last
+## 
+## The following object is masked from 'package:stats':
+## 
+##     filter
+## 
+## The following objects are masked from 'package:base':
+## 
+##     intersect, setdiff, setequal, union
+```
+
+```r
 cuff_list <- list()
 for (i in seq_along(samples)) {
   cat(i)
@@ -229,6 +257,61 @@ would go.
 n <- nrow(norm.mat)
 m <- length(samples)
 library(DESeq2)
+```
+
+```
+## Loading required package: S4Vectors
+## Loading required package: stats4
+## Loading required package: BiocGenerics
+## Loading required package: parallel
+## 
+## Attaching package: 'BiocGenerics'
+## 
+## The following objects are masked from 'package:parallel':
+## 
+##     clusterApply, clusterApplyLB, clusterCall, clusterEvalQ,
+##     clusterExport, clusterMap, parApply, parCapply, parLapply,
+##     parLapplyLB, parRapply, parSapply, parSapplyLB
+## 
+## The following objects are masked from 'package:dplyr':
+## 
+##     intersect, setdiff, union
+## 
+## The following object is masked from 'package:stats':
+## 
+##     xtabs
+## 
+## The following objects are masked from 'package:base':
+## 
+##     anyDuplicated, append, as.data.frame, as.vector, cbind,
+##     colnames, do.call, duplicated, eval, evalq, Filter, Find, get,
+##     intersect, is.unsorted, lapply, Map, mapply, match, mget,
+##     order, paste, pmax, pmax.int, pmin, pmin.int, Position, rank,
+##     rbind, Reduce, rep.int, rownames, sapply, setdiff, sort,
+##     table, tapply, union, unique, unlist, unsplit
+## 
+## 
+## Attaching package: 'S4Vectors'
+## 
+## The following object is masked from 'package:dplyr':
+## 
+##     rename
+## 
+## Loading required package: IRanges
+## 
+## Attaching package: 'IRanges'
+## 
+## The following objects are masked from 'package:dplyr':
+## 
+##     collapse, desc, slice
+## 
+## Loading required package: GenomicRanges
+## Loading required package: GenomeInfoDb
+## Loading required package: Rcpp
+## Loading required package: RcppArmadillo
+```
+
+```r
 cts <- matrix(rpois(n*m,lambda=100),ncol=m)
 coldata <- data.frame(condition=factor(condition), row.names=samples)
 dds <- DESeqDataSetFromMatrix(cts, coldata, ~ condition)
@@ -245,12 +328,12 @@ head(normalizationFactors(dds))
 
 ```
 ##      SRR577587 SRR578627 SRR577595 SRR578635
-## [1,] 0.9386213 1.0654183 0.9386604 1.0653221
-## [2,] 1.0584347 1.6645950 1.0721505 0.5293849
-## [3,] 0.9538692 1.0266083 0.9999909 1.0211989
-## [4,] 1.5247517 0.8809983 0.8517053 0.8740504
-## [5,] 1.0518095 0.6337035 1.4618764 1.0262807
-## [6,] 0.8800437 1.0535816 1.0461111 1.0309790
+## [1,] 0.9385426 1.0646535 0.9392622 1.0654936
+## [2,] 1.0583461 1.6634000 1.0728379 0.5294701
+## [3,] 0.9537893 1.0258714 1.0006321 1.0213632
+## [4,] 1.5246239 0.8803659 0.8522514 0.8741910
+## [5,] 1.0517214 0.6332486 1.4628137 1.0264458
+## [6,] 0.8799699 1.0528253 1.0467818 1.0311449
 ```
 
 ## Input to edgeR
@@ -262,6 +345,23 @@ needs to be on the natural log scale.  The offset matrix, like the
 
 ```r
 library(edgeR)
+```
+
+```
+## Loading required package: limma
+## 
+## Attaching package: 'limma'
+## 
+## The following object is masked from 'package:DESeq2':
+## 
+##     plotMA
+## 
+## The following object is masked from 'package:BiocGenerics':
+## 
+##     plotMA
+```
+
+```r
 o <- log(calcNormFactors(cts/norm.mat)) + log(colSums(cts/norm.mat))
 y <- DGEList(cts)
 y$offset <- t(t(log(norm.mat)) + o)
@@ -269,10 +369,59 @@ y$offset <- t(t(log(norm.mat)) + o)
 
 ## Exploring RSEM and Cufflinks estimates
 
-As a caveat, we note that the RSEM column we used is the effective
-length (where the average fragment length has been subtracted),
+Above, we used RSEM column `effective_length`
+(where the average fragment length has been subtracted),
 whereas the Cufflinks column we used was the transcript length alone.
-This might explain some discrepancy across different software.
+In order to compare across software, we reload the RSEM data, this time using the
+column `length`.
+
+
+```r
+rsem_list <- list()
+for (i in seq_along(samples)) {
+  cat(i)
+  rsem_raw <- fread(paste0("rsem_out/",samples[i],"/",samples[i],".genes.results"))
+  rsem_list[[i]] <- data.frame(eff_length=rsem_raw$length, row.names=rsem_raw$gene_id)
+}
+```
+
+```
+## 1234
+```
+
+```r
+head(rsem_list[[1]])
+```
+
+```
+##                 eff_length
+## ENSG00000000003    2070.85
+## ENSG00000000005     940.50
+## ENSG00000000419    1044.69
+## ENSG00000000457    6088.04
+## ENSG00000000460    2771.35
+## ENSG00000000938    2118.54
+```
+
+```r
+for (i in seq_along(samples)[-1]) {
+  stopifnot(all(rownames(rsem_list[[i]]) == rownames(rsem_list[[1]])))
+}
+rsem <- do.call(cbind, rsem_list)
+rsem <- as.matrix(rsem)
+colnames(rsem) <- samples
+head(rsem)
+```
+
+```
+##                 SRR577587 SRR578627 SRR577595 SRR578635
+## ENSG00000000003   2070.85   2226.82   2039.15   2240.13
+## ENSG00000000005    940.50   1339.00    940.50    542.00
+## ENSG00000000419   1044.69   1075.54   1074.93   1075.95
+## ENSG00000000457   6088.04   3411.57   3409.75   3407.85
+## ENSG00000000460   2771.35   1660.15   3727.00   2600.37
+## ENSG00000000938   2118.54   2393.43   2449.48   2360.06
+```
 
 
 ```r
@@ -295,6 +444,13 @@ colnames(cuff) <- condition
 
 ```r
 library(rafalib)
+```
+
+```
+## Loading required package: RColorBrewer
+```
+
+```r
 mypar(2,2)
 for (i in 1:4) {
   suppressWarnings(plot(rsem[,i], cuff[,i],log="xy",cex=.3,main=samples[i],
@@ -325,14 +481,6 @@ mypar()
 rsem_a <- rowMeans(rsem)
 rsem_m <- log2(rowMeans(rsem[,condition == "SC"])/rowMeans(rsem[,condition == "LV"]))
 plot(rsem_a, rsem_m, log="x", xlab="A", ylab="M", main="rsem", cex=.3)
-```
-
-```
-## Warning in xy.coords(x, y, xlabel, ylabel, log): 2444 x values <= 0
-## omitted from logarithmic plot
-```
-
-```r
 abline(h=0,col="blue")
 ```
 

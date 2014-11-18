@@ -163,10 +163,28 @@ y$offset <- t(t(log(norm.mat)) + o)
 
 ## Exploring RSEM and Cufflinks estimates
 
-As a caveat, we note that the RSEM column we used is the effective
-length (where the average fragment length has been subtracted),
+Above, we used RSEM column `effective_length`
+(where the average fragment length has been subtracted),
 whereas the Cufflinks column we used was the transcript length alone.
-This might explain some discrepancy across different software.
+In order to compare across software, we reload the RSEM data, this time using the
+column `length`.
+
+```{r}
+rsem_list <- list()
+for (i in seq_along(samples)) {
+  cat(i)
+  rsem_raw <- fread(paste0("rsem_out/",samples[i],"/",samples[i],".genes.results"))
+  rsem_list[[i]] <- data.frame(eff_length=rsem_raw$length, row.names=rsem_raw$gene_id)
+}
+head(rsem_list[[1]])
+for (i in seq_along(samples)[-1]) {
+  stopifnot(all(rownames(rsem_list[[i]]) == rownames(rsem_list[[1]])))
+}
+rsem <- do.call(cbind, rsem_list)
+rsem <- as.matrix(rsem)
+colnames(rsem) <- samples
+head(rsem)
+```
 
 ```{r}
 idx <- intersect(rownames(rsem), rownames(cuff))
