@@ -59,8 +59,12 @@ ord <- order(condition)
 
 ## RSEM output
 
-The RSEM `.genes.results` files contain a column `effective_length`,
-so all we have to do is aggregate this over samples.
+The RSEM `.genes.results` files contain a column
+`effective_length`. The effective length as defined by the RSEM
+authors as "transcript length - mean fragment length + 1", and for the
+gene results, the reported effective length is averaged over the
+transcripts, weighting by the percent of total abundance, as described above.
+All we have to do is collect this column over the samples.
 
 
 ```r
@@ -117,9 +121,11 @@ head(rsem)
 
 ## Cufflinks output
 
-In order to obtain the effective length, we use the
-`isoforms.fpkm_tracking` file, and calculate the average length for
-the isoforms, weighting by the ratio of each isoform's FPKM over the total
+For Cufflinks output files, we do not have the exact same
+quantity, the average effective length, but the `isoforms.fpkm_tracking` file does
+report the length of each isoform and the FPKM estimate for each
+isoform. We can calculate the average gene length by averaging over
+the isoforms, weighting by the ratio of each isoform's FPKM to the total
 FPKM for all isoforms.
 
 
@@ -129,8 +135,8 @@ cuff_list <- list()
 for (i in seq_along(samples)) {
   cat(i)
   suppressWarnings({cuff_raw <- fread(paste0("cufflinks_out/",samples[i],"/isoforms.fpkm_tracking"))})
-  res <- cuff_raw %>% group_by(gene_id) %>% summarize(eff_length=sum(length*FPKM)/sum(FPKM))
-  cuff_list[[i]] <- data.frame(eff_length=res$eff_length, row.names=res$gene_id)
+  res <- cuff_raw %>% group_by(gene_id) %>% summarize(avg_length=sum(length*FPKM)/sum(FPKM))
+  cuff_list[[i]] <- data.frame(avg_length=res$avg_length, row.names=res$gene_id)
 }
 ```
 
@@ -143,7 +149,7 @@ head(cuff_list[[1]])
 ```
 
 ```
-##                 eff_length
+##                 avg_length
 ## ENSG00000000003  2205.0650
 ## ENSG00000000005        NaN
 ## ENSG00000000419   996.7745
@@ -189,7 +195,7 @@ cuff.nz <- cuff[apply(cuff, 1, function(x) all(x > 0)),]
 ## Dividing out the geometric mean
 
 As the count based methods have an intercept on the log scale, and 
-the effect of effective length on counts is multiplicative, we can
+the effect of gene length on counts is multiplicative, we can
 divide each row by it's geometric median to produce a matrix which is
 centered on zero in the log scale.
 
@@ -211,7 +217,7 @@ head(norm.mat)
 
 ## Input to DESeq2
 
-Here we show the code for including these effective lengths in a
+Here we show the code for including these gene lengths in a
 DESeq2 analysis. The `estimateSizeFactors` function corrects for
 library size after taking into account the information in `norm.mat`.
 Here we demonstrate using the normalization matrix on a matrix of
@@ -262,6 +268,11 @@ y$offset <- t(t(log(norm.mat)) + o)
 ```
 
 ## Exploring RSEM and Cufflinks estimates
+
+As a caveat, we note that the RSEM column we used is the effective
+length (where the average fragment length has been subtracted),
+whereas the Cufflinks column we used was the transcript length alone.
+This might explain some discrepancy across different software.
 
 
 ```r
