@@ -1,4 +1,4 @@
-# Effective length normalization for count based methods
+## Average transcript length normalization for count based methods
 
 The count of RNA-seq reads which can be assigned to a gene depends on
 a number of factors, including the abundance of that gene, the library
@@ -11,17 +11,15 @@ biases. These factors can also be included as model parameters into a
 count based method, through the use of a gene-by-sample matrix of
 normalization factors, or an offset matrix (on the log scale).
 
-Here we show how to use the estimates of effective length for each
+Here we show how to use the estimates of average transcript length for each
 gene and each sample from the output of RSEM and Cufflinks as
 normalization for count base methods DESeq2 and edgeR.
 
-By gene length, or the
-*effective length* of a gene, we refer to a gene's average transcript
+By gene length, we refer to a gene's average transcript
 length, averaging with respect to the abundance of each
 transcript. For example, if a gene has two transcripts, one of length
 1000 which accounts for 1/4 of the abundance, and one of length 2000
-which accounts for 3/4 of the abundance, the effective length, or
-average transcript length, would be:
+which accounts for 3/4 of the abundance, the average transcript length, would be:
 
 ```{r}
 0.25 * 1000 + 0.75 * 2000
